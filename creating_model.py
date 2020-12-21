@@ -92,7 +92,6 @@ def windows_to_inputs(X_windows):
 
 def load_category(folder, category):
     path = f'{PATH}/{folder}/{category}'
-    print(path)
     files = os.listdir(path)
 
     # find fuzzy centroids for a single category
@@ -187,4 +186,4 @@ if __name__ == "__main__":
     validation_data = itertools.cycle(data_to_generator(dataTest, centroids))
 
     history = model.fit(train_data, epochs=options.epochs, validation_data=validation_data, validation_steps=50, steps_per_epoch=500, verbose=1)
-    model.save(f'{options.checkpoint_path}/model.h5')
+    model.save(f'{options.checkpoint_path}')
