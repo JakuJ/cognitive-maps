@@ -13,10 +13,12 @@ import argparse
 import sys
 import csv
 import losses as L
+import glob
+
 
 WINDOW_SIZE = 0
 CONCEPTS = 0
-PATH = ""
+
 
 
 class Between(Constraint):
@@ -66,8 +68,10 @@ def windows(X, k):
     return np.array(list(window_gen(X, k)))
 
 
-def load_file(folder, category, f):
-    df = pd.read_csv(f'{PATH}/{folder}/{category}/{f}', header=None)
+def load_file(path, f):
+    #df = pd.read_csv(f'{PATH}/{folder}/{category}/{f}', header=None)
+  
+    df = pd.read_csv(f'{path}/{f}', header=None)
     normalized = minmax_scale(df.values)
     df = pd.DataFrame(normalized)
     df.columns = ['x', 'y', 'z']
@@ -90,15 +94,15 @@ def windows_to_inputs(X_windows):
     return {f"concept_{i}": X_windows[:-1, :, i] for i in range(CONCEPTS)}
 
 
-def load_category(folder, category):
-    path = f'{PATH}/{folder}/{category}'
+def load_category(path):
+   
     files = os.listdir(path)
 
     # find fuzzy centroids for a single category
     XdXs = []
     for f in files:
         # load 3D data
-        df = load_file(folder, category, f)
+        df = load_file(path, f)
         # to 6D (X, Y, Z, dX, dY, dZ) space
         XdX = to_6D_space(df.values)
         XdXs.append(XdX)
@@ -133,7 +137,8 @@ def getOptions(args=sys.argv[1:]):
     parser.add_argument("-f", "--features", type=int, help="Number of the features")
     parser.add_argument("-e", "--epochs", type=int, help="Number of epochs")
     parser.add_argument("-c", "--category", help="Name of the category")
-    parser.add_argument("-s", "--source", help="Path to UWaveGestureLibrary")
+    parser.add_argument( "--train_source", help="Path to Train Set")
+    parser.add_argument( "--test_source", help="Path to Test Set")
     parser.add_argument("-n", "--concepts", type=int, help="Number of concepts")
     parser.add_argument("-l", "--loss", type=int, help='''Loss function to be used for training. 
     1 - Mean Squared Error 
@@ -152,14 +157,20 @@ if __name__ == "__main__":
     options = getOptions(sys.argv[1:])
 
     if not os.path.isdir(options.checkpoint_path):
-        raise Exception("The folder doesn't exist")
+        raise Exception("The folder"+ options.checkpoint_path + "  doesn't exist")
+    
+    if not len(glob.glob(f"{options.train_source}/*.csv")) :
+        raise Exception("The  TRAIN folder"+options.train_source + "  doesn't contain .csv files")
+
+    if not len(glob.glob(f"{options.test_source}/*.csv")) :
+        raise Exception("The  TEST folder"+options.test_source + "  doesn't contain .csv files")
 
     WINDOW_SIZE = options.window_size
     CONCEPTS = options.concepts
-    PATH = options.source
+   
 
-    dataTrain = load_category('Train', options.category)
-    dataTest = load_category('Test', options.category)
+    dataTrain = load_category(options.train_source)
+    dataTest = load_category(options.test_source)
     centroids = find_centroids(dataTrain)
 
     np.savetxt(f"{options.checkpoint_path}/centroids.csv", centroids, delimiter=", ", fmt='% s')
