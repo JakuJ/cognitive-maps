@@ -2,13 +2,15 @@ import numpy as np
 import tensorflow as tf
 from sys import argv
 from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras.constraints import Constraint
-import tensorflow.keras.backend as K
+# from keras import layers
+# from tensorflow.keras import layers
+# from tensorflow.keras.constraints import Constraint
+# import tensorflow.keras.backend as K
 import pandas as pd
 import os
 import skfuzzy as fuzz
 from sklearn.preprocessing import minmax_scale
+import losses
 
 ARGS_COUNT = 4
 window_size = -1
@@ -23,7 +25,7 @@ def usage():
 
 def window_gen(X, k):
  n = X.shape[0]
- for i in range(n - k + 1): # not skipping last window
+ for i in range(n - k): # skipping last window
   window = X[i:i+k, :]
   yield [tuple(x) for x in window[:]]
 
@@ -55,7 +57,7 @@ def load_data(path, centroids):
     data = to_6D_space(df.values)
     data = to_concepts(data, centroids)
     windowed = windows(data, window_size)
-    return data, windows_to_inputs(windowed)
+    return data[window_size:], windows_to_inputs(windowed)
 
 
 if __name__ == "__main__":
@@ -78,6 +80,11 @@ if __name__ == "__main__":
         in_concepts, Xs = load_data(path_to_data_file,centroids)
         print("Predicting...")
         predictions = model.predict(Xs)
+        print("predictions", predictions.shape)
+        print("concepts",in_concepts.shape)
+        # print(f"evaluate -> {model.evaluate(Xs)}")
+        losses = losses.mean_squared_error(in_concepts.flatten(),predictions.flatten())
+        print(f"losses -> {losses}")
 
         in_concepts_filename = f"{output_file}_in_concept_space"
         print(f"Saving  to {in_concepts_filename}")

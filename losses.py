@@ -24,12 +24,20 @@ def mean_absolute_relative_error(y_true, y_pred):
     """Mean absolute relative error function."""
     return K.mean(K.abs((y_true - y_pred) / y_true), axis=-1)
 
+@tf.function
+def max_absolute_relative_error(y_true, y_pred):
+    """Max absolute relative error function."""
+    return K.max(K.abs((y_true - y_pred) / y_true), axis=-1)
 
 @tf.function
 def mean_squared_relative_error(y_true, y_pred):
     """Mean squared relative error function."""
     return K.mean(K.square(y_true - y_pred) / y_true, axis=-1)
 
+@tf.function
+def max_squared_relative_error(y_true, y_pred):
+    """max squared relative error function."""
+    return K.max(K.square(y_true - y_pred) / y_true, axis=-1)
 
 @tf.function
 def smae_loss(y_true, y_pred):

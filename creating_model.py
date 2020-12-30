@@ -136,7 +136,6 @@ def getOptions(args=sys.argv[1:]):
     parser.add_argument("-w", "--window_size", type=int, help="Window size")
     parser.add_argument("-f", "--features", type=int, help="Number of the features")
     parser.add_argument("-e", "--epochs", type=int, help="Number of epochs")
-    parser.add_argument("-c", "--category", help="Name of the category")
     parser.add_argument( "--train_source", help="Path to Train Set")
     parser.add_argument( "--test_source", help="Path to Test Set")
     parser.add_argument("-n", "--concepts", type=int, help="Number of concepts")
