@@ -1,19 +1,18 @@
-import numpy as np
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
 import tensorflow as tf
+import numpy as np
 from sys import argv
 from tensorflow import keras
-# from keras import layers
-# from tensorflow.keras import layers
-# from tensorflow.keras.constraints import Constraint
-# import tensorflow.keras.backend as K
 import pandas as pd
-import os
 import skfuzzy as fuzz
 from sklearn.preprocessing import minmax_scale
 import losses
+from inspect import getmembers, isfunction
+
 
 ARGS_COUNT = 4
-window_size = -1
+WINDOW_SIZE = -1
 debug_args = ["scriptName", "drive/MyDrive/model", "dataset/UWaveGestureLibrary/Test/1/1001.csv", "OUT.csv"] 
 args = debug_args if "--debug" in argv else argv
 CONCEPTS = -1
@@ -56,12 +55,11 @@ def load_data(path, centroids):
     df = load_file(path)
     data = to_6D_space(df.values)
     data = to_concepts(data, centroids)
-    windowed = windows(data, window_size)
-    return data[window_size:], windows_to_inputs(windowed)
+    windowed = windows(data, WINDOW_SIZE)
+    return data[WINDOW_SIZE:], windows_to_inputs(windowed)
 
 
 if __name__ == "__main__":
-    # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     if (len(args) != ARGS_COUNT):
         usage()
     else:
@@ -72,23 +70,27 @@ if __name__ == "__main__":
         model = keras.models.load_model(path_to_model)
         centroids = np.genfromtxt(f"{path_to_model}/centroids.csv", delimiter=',')
         CONCEPTS = centroids.shape[0]
-        window_size = model.layers[0].input_shape[0][1]
-        print('window size', window_size)
-        print(centroids)
+        WINDOW_SIZE = model.layers[0].input_shape[0][1]
+        # print('window size', WINDOW_SIZE)
+        # print(centroids)
         print(f"Loading data from {path_to_data_file}")
         #Xs, Ys = load_data_from_path(path_to_data_file)
-        in_concepts, Xs = load_data(path_to_data_file,centroids)
+        in_concept_space, Xs = load_data(path_to_data_file,centroids)
         print("Predicting...")
         predictions = model.predict(Xs)
-        print("predictions", predictions.shape)
-        print("concepts",in_concepts.shape)
+        # print("predictions", predictions.shape)
+        # print("concepts",in_concept_space.shape)
         # print(f"evaluate -> {model.evaluate(Xs)}")
-        losses = losses.mean_squared_error(in_concepts.flatten(),predictions.flatten())
-        print(f"losses -> {losses}")
-
-        in_concepts_filename = f"{output_file}_in_concept_space"
-        print(f"Saving  to {in_concepts_filename}")
-        np.savetxt(in_concepts_filename, in_concepts, fmt="%f", delimiter=",")
+        
+        # losses = losses.mean_absolute_relative_error(in_concept_space.flatten(),predictions.flatten())
+        # print(f"losses -> {losses}")
+        print("#"*15, "Losses", "#"*15)
+        [tf.print(func_name,func(np.float32(in_concept_space.flatten()),np.float32(predictions.flatten()))) for func_name, func in getmembers(losses, isfunction)]
+        print("#" * (15*2 + len(" Losses ")))
+        print()
+        in_concept_space_filename = f"{output_file}_concept_space"
+        print(f"Saving input data in concept space to {in_concept_space_filename}")
+        np.savetxt(in_concept_space_filename, in_concept_space, fmt="%f", delimiter=",")
 
         print(f"Saving predictions to {output_file}")
         np.savetxt(output_file, predictions, fmt="%f", delimiter=",")

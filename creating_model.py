@@ -184,11 +184,11 @@ if __name__ == "__main__":
     elif options.loss == 4:
         error = L.huber_loss
     elif options.loss == 5:
-        error = L.mean_absolute_relative_error
+        error = L.mean_absolute_relative_error_tf
     elif options.loss == 6:
-        error = L.mean_squared_relative_error
+        error = L.mean_squared_relative_error_tf
     elif options.loss == 7:
-        error = L.smae_loss
+        error = L.smae_loss_tf
 
     optimizer = keras.optimizers.SGD(learning_rate=0.1)
     model.compile(optimizer, error)
