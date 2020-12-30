@@ -71,19 +71,10 @@ if __name__ == "__main__":
         centroids = np.genfromtxt(f"{path_to_model}/centroids.csv", delimiter=',')
         CONCEPTS = centroids.shape[0]
         WINDOW_SIZE = model.layers[0].input_shape[0][1]
-        # print('window size', WINDOW_SIZE)
-        # print(centroids)
         print(f"Loading data from {path_to_data_file}")
-        #Xs, Ys = load_data_from_path(path_to_data_file)
         in_concept_space, Xs = load_data(path_to_data_file,centroids)
         print("Predicting...")
         predictions = model.predict(Xs)
-        # print("predictions", predictions.shape)
-        # print("concepts",in_concept_space.shape)
-        # print(f"evaluate -> {model.evaluate(Xs)}")
-        
-        # losses = losses.mean_absolute_relative_error(in_concept_space.flatten(),predictions.flatten())
-        # print(f"losses -> {losses}")
         print("#"*15, "Losses", "#"*15)
         [tf.print(func_name,func(np.float32(in_concept_space.flatten()),np.float32(predictions.flatten()))) for func_name, func in getmembers(losses, isfunction)]
         print("#" * (15*2 + len(" Losses ")))
