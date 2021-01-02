@@ -188,7 +188,7 @@ if __name__ == "__main__":
     elif options.loss == 6:
         error = L.mean_squared_relative_error_tf
     elif options.loss == 7:
-        error = L.smae_loss_tf
+        error = L.symetric_mean_absolute_error_tf
 
     optimizer = keras.optimizers.SGD(learning_rate=0.1)
     model.compile(optimizer, error)

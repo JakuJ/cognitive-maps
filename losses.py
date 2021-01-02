@@ -34,7 +34,7 @@ def max_squared_relative_error(y_true, y_pred):#
     """max squared relative error function."""
     return K.max(K.square(y_true - y_pred) / y_true, axis=-1)
 
-def smae_loss(y_true, y_pred):
+def symetric_mean_absolute_error(y_true, y_pred):
     """Symmetric mean absolute error function."""
     return K.mean(K.abs(y_pred - y_true) / (K.abs(y_pred) + K.abs(y_true)), axis=-1)
 
@@ -56,8 +56,8 @@ def max_squared_relative_error_tf(y_true, y_pred):
     return max_squared_relative_error(y_true, y_pred)
 
 @tf.function
-def smae_loss_tf(y_true, y_pred):
-    return smae_loss(y_true, y_pred)
+def symetric_mean_absolute_error_tf(y_true, y_pred):
+    return symetric_mean_absolute_error(y_true, y_pred)
 
 
 if __name__ == "__main__":
