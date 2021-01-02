@@ -43,15 +43,6 @@ def load_data(path, centroids):
         df.columns = ['x', 'y', 'z']
         return df
 
-    def to_6D_space(X):
-        dX = X[1:, :] - X[:-1, :]
-        X = np.hstack([X[1:, :], dX])
-        return minmax_scale(X)
-
-    def to_concepts(X, centroids):
-        X_fuzzy, *_ = fuzz.cluster.cmeans_predict(X.T, centroids, 2, error=0.005, maxiter=1000, init=None)
-        return X_fuzzy.T
-
     df = load_file(path)
     data = to_6D_space(df.values)
     data = to_concepts(data, centroids)
