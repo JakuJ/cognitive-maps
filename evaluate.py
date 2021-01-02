@@ -2,7 +2,6 @@ import os
 import sys
 from inspect import getmembers, isfunction
 
-import tensorflow as tf
 from tensorflow import keras
 
 import losses
@@ -10,47 +9,28 @@ from common import *
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-ARGS_COUNT = 3
-WINDOW_SIZE = -1
-exec_name, *args = sys.argv
-CONCEPTS = -1
 
-
-def usage():
+def usage(name):
     print("USAGE")
-    print(f"{exec_name} [path_to_model] [path_to_data] [output_path]")
-    print(f"Example: python3 {exec_name} /my/saved/model/dir /dataset/category1/data.csv /output/data_out.csv")
+    print(f"[interpreter] {name} [path_to_model] [path_to_data] [output_path]")
+    print(f"Example: python3 {name} /my/saved/model/dir /dataset/category1/data.csv /output/data_out.csv")
 
 
-def window_gen(X, k):
-    n = X.shape[0]
-    for i in range(n - k):  # skipping last window
-        window = X[i:i + k, :]
-        yield [tuple(x) for x in window[:]]
-
-
-def windows(X, k):
-    return np.array(list(window_gen(X, k)))
-
-
-def windows_to_inputs(X_windows):
-    return {f"concept_{i}": X_windows[:, :, i] for i in range(CONCEPTS)}
-
-
-def load_data(path, centers):
+def load_data(path, centers, num_concepts, window_width):
     df = load_file(path)
-    data = to_6D_space(df)
+    data = expand_derivatives(df)
     data = to_concepts(data, centers)
-    windowed = windows(data, WINDOW_SIZE)
-    return data[WINDOW_SIZE:], windows_to_inputs(windowed)
+    windowed = windows(data, window_width, skip_last=True)
+    return data[window_width:], windows_to_inputs(windowed, num_concepts, skip_last=False)
 
 
 if __name__ == "__main__":
-    if len(args) != ARGS_COUNT:
-        usage()
+    # parse arguments
+    exec_name, *args = sys.argv
+    if len(args) != 3:
+        usage(exec_name)
         sys.exit(1)
 
-    # parse arguments
     path_to_model, path_to_data_file, output_file = args
 
     # load model
@@ -60,11 +40,11 @@ if __name__ == "__main__":
     centroids_path = os.path.join(path_to_model, 'centroids.csv')
     centroids = np.genfromtxt(centroids_path, delimiter=',')
 
-    CONCEPTS = centroids.shape[0]
-    WINDOW_SIZE = model.layers[0].input_shape[0][1]
+    concepts = centroids.shape[0]
+    window_size = model.layers[0].input_shape[0][1]
 
     print(f"Loading data from '{path_to_data_file}'")
-    in_concept_space, Xs = load_data(path_to_data_file, centroids)
+    in_concept_space, Xs = load_data(path_to_data_file, centroids, concepts, window_size)
 
     print("Predicting...")
     predictions = model.predict(Xs)

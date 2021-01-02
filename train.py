@@ -15,11 +15,10 @@ from common import *
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-WINDOW_SIZE = 0
-CONCEPTS = 0
-
 
 class Between(Constraint):
+    """Kernel constraint keeping model weights between the values provided at initialization."""
+
     def __init__(self, min_value, max_value):
         self.min_value = min_value
         self.max_value = max_value
@@ -40,10 +39,10 @@ def activation(x):
     return 1.0 / (1.0 + K.exp(-5 * x))
 
 
-def make_model(input_size, output_size, window):
+def make_model(input_size, output_size, window_width):
     constraint = Between(-1, 1)
 
-    input_layers = [layers.Input(shape=(window,), name=f"concept_{i}") for i in range(input_size)]
+    input_layers = [layers.Input(shape=(window_width,), name=f"concept_{i}") for i in range(input_size)]
     aggregation_layers = [layers.Dense(1, activation, kernel_constraint=constraint, name=f'aggregate_{i}')(inp) for i, inp in enumerate(input_layers)]
 
     if input_size > 1:
@@ -55,52 +54,36 @@ def make_model(input_size, output_size, window):
     return keras.Model(inputs=input_layers, outputs=[fcm])
 
 
-def window_generator(X, k):
-    n = X.shape[0]
-    for i in range(n - k + 1):
-        window = X[i:i + k, :]
-        yield [tuple(x) for x in window[:]]
-
-
-def windows(X, k):
-    return np.array(list(window_generator(X, k)))
-
-
-def windows_to_inputs(X_windows):
-    """Windows to Xs, Ys tuple"""
-    return {f"concept_{i}": X_windows[:-1, :, i] for i in range(CONCEPTS)}
-
-
 def load_folder(path):
     files = os.listdir(path)
 
     # load all CSV files and transform to 2N space (data + derivatives)
-    XdXs = [to_6D_space(load_file(os.path.join(path, f))) for f in files]
+    XdXs = [expand_derivatives(load_file(os.path.join(path, f))) for f in files]
 
-    # to np.array: files x length x features
+    # dimensions: files x length x features
     return np.array(XdXs)
 
 
-def find_centroids(XdXs):
+def find_centroids(XdXs, num_concepts):
     # concatenate all data points
     X = np.vstack(XdXs)
 
     # find fuzzy cluster centers
-    centers, *_ = fuzz.cluster.cmeans(X.T, CONCEPTS, 2, error=0.005, maxiter=10000, init=None)
+    centers, *_ = fuzz.cluster.cmeans(X.T, num_concepts, 2, error=0.005, maxiter=10000, init=None)
 
     return centers
 
 
-def data_to_generator(data, centers):
+def data_to_generator(data, centers, num_concepts, window_width):
     for XdX in data:
         # to fuzzy concept-space
         X_fuzzy = to_concepts(XdX, centers)
 
         # split into windows
-        X_windows = windows(X_fuzzy, WINDOW_SIZE)
+        X_windows = windows(X_fuzzy, window_width, skip_last=False)
 
         # split into separate inputs and outputs for the model
-        yield windows_to_inputs(X_windows), X_windows[1:, -1, :]
+        yield windows_to_inputs(X_windows, num_concepts, skip_last=True), X_windows[1:, -1, :]
 
 
 def getOptions(args):
@@ -135,16 +118,16 @@ if __name__ == "__main__":
     if not len(glob.glob(f"{options.test_source}/*.csv")):
         raise Exception(f"{options.test_source} - test data folder contains no CSV files")
 
-    WINDOW_SIZE = options.window_size
-    CONCEPTS = options.concepts
+    window_size = options.window_size
+    concepts = options.concepts
 
     dataTrain = load_folder(options.train_source)
     dataTest = load_folder(options.test_source)
-    centroids = find_centroids(dataTrain)
+    centroids = find_centroids(dataTrain, concepts)
 
     centroids_path = os.path.join(options.checkpoint_path, 'centroids.csv')
     np.savetxt(centroids_path, centroids, delimiter=", ", fmt='%s')
-    model = make_model(CONCEPTS, CONCEPTS, WINDOW_SIZE)
+    model = make_model(concepts, concepts, window_size)
 
     if options.loss == 1:
         error = L.mean_squared_error
@@ -163,8 +146,8 @@ if __name__ == "__main__":
 
     optimizer = keras.optimizers.SGD(learning_rate=0.1)
     model.compile(optimizer, error)
-    train_data = itertools.cycle(data_to_generator(dataTrain, centroids))
-    validation_data = itertools.cycle(data_to_generator(dataTest, centroids))
+    train_data = itertools.cycle(data_to_generator(dataTrain, centroids, concepts, window_size))
+    validation_data = itertools.cycle(data_to_generator(dataTest, centroids, concepts, window_size))
 
     history = model.fit(train_data, epochs=options.epochs, validation_data=validation_data, validation_steps=50, steps_per_epoch=500, verbose=1)
     model.save(options.checkpoint_path)
