@@ -4,7 +4,6 @@ import itertools
 import os
 import sys
 
-import pandas as pd
 import tensorflow as tf
 import tensorflow.keras.backend as K
 from tensorflow import keras
@@ -13,6 +12,8 @@ from tensorflow.keras.constraints import Constraint
 
 import losses as L
 from common import *
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 WINDOW_SIZE = 0
 CONCEPTS = 0
@@ -65,11 +66,6 @@ def windows(X, k):
     return np.array(list(window_generator(X, k)))
 
 
-def load_file(path, f):
-    df = pd.read_csv(f'{path}/{f}', header=None)
-    return minmax_scale(df.values)
-
-
 def windows_to_inputs(X_windows):
     """Windows to Xs, Ys tuple"""
     return {f"concept_{i}": X_windows[:-1, :, i] for i in range(CONCEPTS)}
@@ -79,7 +75,7 @@ def load_folder(path):
     files = os.listdir(path)
 
     # load all CSV files and transform to 2N space (data + derivatives)
-    XdXs = [to_6D_space(load_file(path, f)) for f in files]
+    XdXs = [to_6D_space(load_file(os.path.join(path, f))) for f in files]
 
     # to np.array: files x length x features
     return np.array(XdXs)
@@ -159,11 +155,11 @@ if __name__ == "__main__":
     elif options.loss == 4:
         error = L.huber_loss
     elif options.loss == 5:
-        error = L.mean_absolute_relative_error_tf
+        error = tf.function(L.mean_absolute_relative_error)
     elif options.loss == 6:
-        error = L.mean_squared_relative_error_tf
+        error = tf.function(L.mean_squared_relative_error)
     elif options.loss == 7:
-        error = L.symetric_mean_absolute_error_tf
+        error = tf.function(L.symmetric_mean_absolute_error)
 
     optimizer = keras.optimizers.SGD(learning_rate=0.1)
     model.compile(optimizer, error)
