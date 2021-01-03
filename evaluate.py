@@ -47,14 +47,14 @@ if __name__ == "__main__":
     print("Predicting...")
     predictions = model.predict(Xs)
 
-    border, side_length, header = '-', 16, "Losses"
+    border, side_length, header = '-', 22, "Losses"
     print()
     print(border * side_length, header, border * side_length)
 
     for func_name, func in getmembers(losses, isfunction):
         fmt_name = func_name.replace('_', ' ').capitalize()
         loss = func(np.float32(in_concept_space.flatten()), np.float32(predictions.flatten())).numpy()
-        print("{:<30}\t{:<10.6f}".format(fmt_name, loss))
+        print("{:<40}  {:>10.6f}".format(fmt_name, loss))
 
     print(border * (side_length * 2 + len(header) + 2))
     print()

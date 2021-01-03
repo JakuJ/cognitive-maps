@@ -100,10 +100,9 @@ def getOptions(args):
 1 - Mean Squared Error (default)
 2 - Mean Absolute Error
 3 - Mean Squared Logarithmic Error
-4 - Huber Loss
-5 - Mean Absolute Percentage Error
-6 - Mean Squared Percentage Error
-7 - Symmetric Mean Absolute Percentage Error''', default=1)
+4 - Mean Absolute Percentage Error
+5 - Mean Squared Percentage Error
+6 - Symmetric Mean Absolute Percentage Error''', default=1)
     return parser.parse_args(args)
 
 
@@ -134,10 +133,9 @@ if __name__ == "__main__":
         L.mean_squared_error,
         L.mean_absolute_error,
         L.mean_squared_logarithmic_error,
-        L.huber_loss,
-        tf.function(L.mean_absolute_relative_error),
-        tf.function(L.mean_squared_relative_error),
-        tf.function(L.symmetric_mean_absolute_error),
+        tf.function(L.mean_absolute_percentage_error),
+        tf.function(L.mean_squared_percentage_error),
+        tf.function(L.symmetric_mean_absolute_percentage_error),
     ][options.loss - 1]
 
     optimizer = keras.optimizers.SGD(learning_rate=options.learning_rate)

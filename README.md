@@ -1,6 +1,7 @@
 # Cognitive maps in time series prediction
 
-This repository holds Python scripts responsible for training and evaluation of cognitive map–based ML models when applied to the problem of time series prediction.
+This repository holds Python scripts responsible for training and evaluation of cognitive map–based ML models applied to
+the problem of time series prediction.
 
 ## Requirements
 
@@ -16,16 +17,19 @@ python3 -m pip install -r requirements.txt
 
 ## Running
 
-The `train.py` script is responsible for training a model on a set of training data (a folder of CSV files) 
+The `train.py` script is responsible for training a model on a set of training data (a folder of CSV files)
 and saving it, along with the fuzzy cluster centers trained on this data, to a user-specified directory.
 
 The `evaluate.py` script runs the serialized model on data in the provided CSV file and outputs files with the results,
 as well as the inputs transformed into the concept space using centroids extracted from the training data.
 
+Additionally, the `plot.py` script can be used to show a graphic comparison between the original data in concept space
+and the predicted values.
+
 To display detailed information about arguments for each script, run
+
 ```shell
-    python3 train.py --help
-    python3 evaluate.py --help
+    python3 <script> --help
 ```
 
 An example run, using the "UWave Gesture Library" dataset might look like this:
@@ -38,8 +42,11 @@ An example run, using the "UWave Gesture Library" dataset might look like this:
   # evaluate the model on the 10.csv file in the 1st category, printing loss function values, 
   # saving results to output.csv, and writing concept-space input data to output_concept_space.csv
   python3 evaluate.py model UWaveGestureLibrary/Test/1/10.csv output.csv
+  
+  # show a plot comparing predicted and original data
+  python3 plot.py output_concept_space.csv output.csv
 ```
 
-Note that the files created by the `evaluate.py` script have `N - w - 1` rows, where `N` is the number of rows in the input file
-and `w` is the window width. The `- 1` comes from skipping the last window of the provided data, as it wouldn't correspond to any
-original data point (it would be a prediction of the hypothetical `N+1`th data point).
+Note that the files created by the `evaluate.py` script have `N - w - 1` rows, where `N` is the number of rows in the
+input file and `w` is the window width. The `- 1` comes from skipping the last window of the provided data, as it
+wouldn't correspond to any original data point (it would be a prediction of the hypothetical `N+1`th data point).
