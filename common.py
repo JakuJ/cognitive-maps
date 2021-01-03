@@ -15,7 +15,7 @@ def windows(X, width, skip_last):
 
 
 def windows_to_inputs(X_windows, num_concepts, skip_last):
-    """Split windowed data into separate inputs for each fearure."""
+    """Split windowed data into separate inputs for each feature."""
     n = X_windows.shape[0]
     return {f"concept_{i}": X_windows[:(-1 if skip_last else n), :, i] for i in range(num_concepts)}
 

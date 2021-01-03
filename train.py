@@ -87,30 +87,31 @@ def data_to_generator(data, centers, num_concepts, window_width):
 
 
 def getOptions(args):
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description="Parses commands")
-    parser.add_argument("-w", "--window_size", type=int, help="Window size")
-    parser.add_argument("-f", "--features", type=int, help="Number of the features")
-    parser.add_argument("-e", "--epochs", type=int, help="Number of epochs")
-    parser.add_argument("--train_source", help="Path to Train Set")
-    parser.add_argument("--test_source", help="Path to Test Set")
-    parser.add_argument("-n", "--concepts", type=int, help="Number of concepts")
-    parser.add_argument("-l", "--loss", type=int, help='''Loss function to be used for training. 
-    1 - Mean Squared Error 
-    2 - Mean Absolute Error
-    3 - Mean Squared Logarithmic Error
-    4 - Huber Loss
-    5 - Mean Absolute Percentage Error
-    6 - Mean Squared Percentage Error
-    7 - Symmetric Mean Absolute Percentage Error''')
-    parser.add_argument("--checkpoint_path", help="Path to the folder with checkpoint data")
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--train-source", help="path to training data folder", required=True)
+    parser.add_argument("--test-source", help="path to test data folder", required=True)
+    parser.add_argument("--model-path", help="path to the folder with model data", required=True)
+    parser.add_argument("-f", "--features", type=int, help="number of features in input data", required=True)
+    parser.add_argument("-c", "--concepts", type=int, help="number of concepts", required=True)
+    parser.add_argument("-w", "--window-size", type=int, help="window size, defaults to 30", default=30)
+    parser.add_argument("-e", "--epochs", type=int, help="number of epochs, defaults to 10", default=10)
+    parser.add_argument("-r", "--learning-rate", type=float, help="learning rate, defaults to 0.1", default=0.1)
+    parser.add_argument("-l", "--loss", type=int, help='''loss function to be used for training. 
+1 - Mean Squared Error (default)
+2 - Mean Absolute Error
+3 - Mean Squared Logarithmic Error
+4 - Huber Loss
+5 - Mean Absolute Percentage Error
+6 - Mean Squared Percentage Error
+7 - Symmetric Mean Absolute Percentage Error''', default=1)
     return parser.parse_args(args)
 
 
 if __name__ == "__main__":
     options = getOptions(sys.argv[1:])
 
-    if not os.path.isdir(options.checkpoint_path):
-        raise Exception(f"{options.checkpoint_path} - folder doesn't exist")
+    if not os.path.isdir(options.model_path):
+        raise Exception(f"{options.model_path} - folder doesn't exist")
 
     if not len(glob.glob(f"{options.train_source}/*.csv")):
         raise Exception(f"{options.train_source} - training data folder contains no CSV files")
@@ -125,29 +126,24 @@ if __name__ == "__main__":
     dataTest = load_folder(options.test_source)
     centroids = find_centroids(dataTrain, concepts)
 
-    centroids_path = os.path.join(options.checkpoint_path, 'centroids.csv')
+    centroids_path = os.path.join(options.model_path, 'centroids.csv')
     np.savetxt(centroids_path, centroids, delimiter=", ", fmt='%s')
     model = make_model(concepts, concepts, window_size)
 
-    if options.loss == 1:
-        error = L.mean_squared_error
-    elif options.loss == 2:
-        error = L.mean_absolute_error
-    elif options.loss == 3:
-        error = L.mean_squared_logarithmic_error
-    elif options.loss == 4:
-        error = L.huber_loss
-    elif options.loss == 5:
-        error = tf.function(L.mean_absolute_relative_error)
-    elif options.loss == 6:
-        error = tf.function(L.mean_squared_relative_error)
-    elif options.loss == 7:
-        error = tf.function(L.symmetric_mean_absolute_error)
+    error = [
+        L.mean_squared_error,
+        L.mean_absolute_error,
+        L.mean_squared_logarithmic_error,
+        L.huber_loss,
+        tf.function(L.mean_absolute_relative_error),
+        tf.function(L.mean_squared_relative_error),
+        tf.function(L.symmetric_mean_absolute_error),
+    ][options.loss - 1]
 
-    optimizer = keras.optimizers.SGD(learning_rate=0.1)
+    optimizer = keras.optimizers.SGD(learning_rate=options.learning_rate)
     model.compile(optimizer, error)
     train_data = itertools.cycle(data_to_generator(dataTrain, centroids, concepts, window_size))
     validation_data = itertools.cycle(data_to_generator(dataTest, centroids, concepts, window_size))
 
     history = model.fit(train_data, epochs=options.epochs, validation_data=validation_data, validation_steps=50, steps_per_epoch=500, verbose=1)
-    model.save(options.checkpoint_path)
+    model.save(options.model_path)
