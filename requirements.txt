@@ -1,4 +1,6 @@
+numpy
 tensorflow>=2.4.0
 pandas
 scikit-learn
 scikit-fuzzy
+matplotlib
