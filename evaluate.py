@@ -32,7 +32,8 @@ if __name__ == "__main__":
     options = getOptions(sys.argv[1:])
 
     # load model
-    model = keras.models.load_model(options.model)
+    model = keras.models.load_model(options.model, compile=False)
+    model.compile(loss='mse', optimizer='sgd')
 
     # load fuzzy cluster centers
     centroids_path = os.path.join(options.model, 'centroids.csv')

@@ -91,26 +91,23 @@ def getOptions(args):
     parser.add_argument("--train-source", help="path to training data folder", required=True)
     parser.add_argument("--test-source", help="path to test data folder", required=True)
     parser.add_argument("--model-path", help="path to the folder with model data", required=True)
-    parser.add_argument("-f", "--features", type=int, help="number of features in input data", required=True)
     parser.add_argument("-c", "--concepts", type=int, help="number of concepts", required=True)
     parser.add_argument("-w", "--window-size", type=int, help="window size, defaults to 30", default=30)
     parser.add_argument("-e", "--epochs", type=int, help="number of epochs, defaults to 10", default=10)
     parser.add_argument("-r", "--learning-rate", type=float, help="learning rate, defaults to 0.1", default=0.1)
     parser.add_argument("-l", "--loss", type=int, help='''loss function to be used for training. 
-1 - Mean Squared Error (default)
-2 - Mean Absolute Error
-3 - Mean Squared Logarithmic Error
-4 - Mean Absolute Percentage Error
-5 - Mean Squared Percentage Error
-6 - Symmetric Mean Absolute Percentage Error''', default=1)
+1 - Mean squared error (default)
+2 - Mean absolute error
+3 - Mean squared logarithmic error
+4 - Mean relative error
+5 - Mean squared relative error
+6 - Symmetric mean absolute error''', default=1)
     return parser.parse_args(args)
 
 
 if __name__ == "__main__":
+    # parse options
     options = getOptions(sys.argv[1:])
-
-    if not os.path.isdir(options.model_path):
-        raise Exception(f"{options.model_path} - folder doesn't exist")
 
     if not len(glob.glob(f"{options.train_source}/*.csv")):
         raise Exception(f"{options.train_source} - training data folder contains no CSV files")
@@ -118,30 +115,36 @@ if __name__ == "__main__":
     if not len(glob.glob(f"{options.test_source}/*.csv")):
         raise Exception(f"{options.test_source} - test data folder contains no CSV files")
 
-    window_size = options.window_size
-    concepts = options.concepts
-
+    # load data
     dataTrain = load_folder(options.train_source)
     dataTest = load_folder(options.test_source)
-    centroids = find_centroids(dataTrain, concepts)
+    centroids = find_centroids(dataTrain, options.concepts)
 
-    centroids_path = os.path.join(options.model_path, 'centroids.csv')
-    np.savetxt(centroids_path, centroids, delimiter=", ", fmt='%s')
-    model = make_model(concepts, concepts, window_size)
-
+    # choose error function
     error = [
         L.mean_squared_error,
         L.mean_absolute_error,
         L.mean_squared_logarithmic_error,
-        tf.function(L.mean_absolute_percentage_error),
-        tf.function(L.mean_squared_percentage_error),
-        tf.function(L.symmetric_mean_absolute_percentage_error),
+        tf.function(L.mean_relative_error),
+        tf.function(L.mean_squared_relative_error),
+        tf.function(L.symmetric_mean_absolute_error),
     ][options.loss - 1]
 
+    # create model
+    model = make_model(options.concepts, options.concepts, options.window_size)
     optimizer = keras.optimizers.SGD(learning_rate=options.learning_rate)
     model.compile(optimizer, error)
-    train_data = itertools.cycle(data_to_generator(dataTrain, centroids, concepts, window_size))
-    validation_data = itertools.cycle(data_to_generator(dataTest, centroids, concepts, window_size))
 
+    # prepare data
+    train_data = itertools.cycle(data_to_generator(dataTrain, centroids, options.concepts, options.window_size))
+    validation_data = itertools.cycle(data_to_generator(dataTest, centroids, options.concepts, options.window_size))
+
+    # train model
     history = model.fit(train_data, epochs=options.epochs, validation_data=validation_data, validation_steps=50, steps_per_epoch=500, verbose=1)
+
+    # serialize model and centroids
     model.save(options.model_path)
+    centroids_path = os.path.join(options.model_path, 'centroids.csv')
+    np.savetxt(centroids_path, centroids, delimiter=", ", fmt='%s')
+
+    print("Done")

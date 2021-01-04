@@ -35,9 +35,9 @@ To display detailed information about arguments for each script, run
 An example run, using the "UWave Gesture Library" dataset might look like this:
 
 ```shell
-  # train a model on the first category, with window width of 30, 3 features, 5 epochs, 3 concepts
+  # train a model on the first category, with window width of 30, 5 epochs, 3 concepts
   # and serialize the model to the "model" directory 
-  python3 train.py -w 30 -f 3 -e 5 --train-source "./UWaveGestureLibrary/Train/1" --test-source "./UWaveGestureLibrary/Test/1" -c 3 --model-path model
+  python3 train.py -w 30 -e 5 --train-source "./UWaveGestureLibrary/Train/1" --test-source "./UWaveGestureLibrary/Test/1" -c 3 --model-path model
 
   # evaluate the model on the 10.csv file in the 1st category, printing loss function values, 
   # saving results to output.csv, and writing concept-space input data to output_concept_space.csv
