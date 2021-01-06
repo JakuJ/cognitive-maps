@@ -32,21 +32,65 @@ To display detailed information about arguments for each script, run
     python3 <script> --help
 ```
 
-An example run, using the "UWave Gesture Library" dataset might look like this:
+## Examples
+
+Train a model on the first category of the "UWave Gesture Library" dataset, setting window width to 30, 5 epochs, and 3 concepts.
+Serialize the model to the "model" directory. 
 
 ```shell
-  # train a model on the first category, with window width of 30, 5 epochs, 3 concepts
-  # and serialize the model to the "model" directory 
-  python3 train.py -w 30 -e 5 --train-source "./UWaveGestureLibrary/Train/1" --test-source "./UWaveGestureLibrary/Test/1" -c 3 --model-path model
+python3 train.py -w 30 -e 5 --train-source "./UWaveGestureLibrary/Train/1" --test-source "./UWaveGestureLibrary/Test/1" -c 3 --model-path model
+```
 
-  # evaluate the model on the 10.csv file in the 1st category, printing loss function values, 
-  # saving results to output.csv, and writing concept-space input data to output_concept_space.csv
-  python3 evaluate.py model UWaveGestureLibrary/Test/1/10.csv output.csv
-  
-  # show a plot comparing predicted and original data
+**Output**
+```text
+Epoch 1/5
+500/500 [==============================] - 7s 13ms/step - loss: 0.0203 - val_loss: 0.0069
+Epoch 2/5
+500/500 [==============================] - 2s 5ms/step - loss: 0.0055 - val_loss: 0.0034
+Epoch 3/5
+500/500 [==============================] - 2s 4ms/step - loss: 0.0028 - val_loss: 0.0021
+Epoch 4/5
+500/500 [==============================] - 3s 5ms/step - loss: 0.0020 - val_loss: 0.0019
+Epoch 5/5
+500/500 [==============================] - 4s 8ms/step - loss: 0.0017 - val_loss: 0.0016
+Done
+```
+
+Evaluate the model on the 10.csv file in the 1st category, printing loss function values, 
+saving results to output.csv, and writing concept-space input data to output_concept_space.csv
+
+```shell
+python3 evaluate.py model UWaveGestureLibrary/Test/1/10.csv output.csv
+```
+
+**Output**
+
+```text
+Loading data from 'UWaveGestureLibrary/Test/1/10.csv'
+Predicting...
+
+---------------------- Losses ----------------------
+Max relative error                          0.865075
+Max squared relative error                  0.158491
+Mean absolute error                         0.032265
+Mean relative error                         0.107688
+Mean squared error                          0.001747
+Mean squared logarithmic error              0.000983
+Mean squared relative error                 0.005692
+Symmetric mean absolute error               0.052995
+----------------------------------------------------
+
+Saving input data in concept space to 'output_concept_space.csv'
+Saving predictions to 'output.csv'
+Done
+```
+
+Show a plot comparing predicted and original data
+
+```shell
   python3 plot.py output_concept_space.csv output.csv
 ```
 
-Note that the files created by the `evaluate.py` script have `N - w - 1` rows, where `N` is the number of rows in the
-input file and `w` is the window width. The `- 1` comes from skipping the last window of the provided data, as it
-wouldn't correspond to any original data point (it would be a prediction of the hypothetical `N+1`th data point).
+**Output**
+
+![Graphical comparison](images/comparison.png)
