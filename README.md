@@ -29,19 +29,21 @@ and the predicted values.
 To display detailed information about arguments for each script, run
 
 ```shell
-    python3 <script> --help
+python3 <script> --help
 ```
 
 ## Examples
 
-Train a model on the first category of the "UWave Gesture Library" dataset, setting window width to 30, 5 epochs, and 3 concepts.
-Serialize the model to the "model" directory. 
+1. Train a model on the first category of the "UWave Gesture Library" dataset, setting window width to 30, 
+training for 5 epochs, and using 3 concepts. Serialize it to the "model" directory.
 
 ```shell
-python3 train.py -w 30 -e 5 --train-source "./UWaveGestureLibrary/Train/1" --test-source "./UWaveGestureLibrary/Test/1" -c 3 --model-path model
+python3 train.py -w 30 -e 5 -c 3 --model-path model\
+                 --train-source "./UWaveGestureLibrary/Train/1"\
+                 --test-source "./UWaveGestureLibrary/Test/1"
 ```
 
-**Output**
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Output:
 ```text
 Epoch 1/5
 500/500 [==============================] - 7s 13ms/step - loss: 0.0203 - val_loss: 0.0069
@@ -56,14 +58,14 @@ Epoch 5/5
 Done
 ```
 
-Evaluate the model on the 10.csv file in the 1st category, printing loss function values, 
-saving results to output.csv, and writing concept-space input data to output_concept_space.csv
+2. Evaluate the model on the `10.csv` file in the 1st category, printing loss function values, 
+saving results to `output.csv`, and writing concept-space input data to `output_concept_space.csv`.
 
 ```shell
 python3 evaluate.py model UWaveGestureLibrary/Test/1/10.csv output.csv
 ```
 
-**Output**
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Output:
 
 ```text
 Loading data from 'UWaveGestureLibrary/Test/1/10.csv'
@@ -85,12 +87,12 @@ Saving predictions to 'output.csv'
 Done
 ```
 
-Show a plot comparing predicted and original data
+3. Show a plot comparing predicted and original data
 
 ```shell
-  python3 plot.py output_concept_space.csv output.csv
+python3 plot.py output_concept_space.csv output.csv
 ```
 
-**Output**
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Output:
 
 ![Graphical comparison](images/comparison.png)
